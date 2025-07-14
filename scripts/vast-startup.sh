@@ -162,7 +162,7 @@ ensure_hashtopolis_agent() {
         cd "$WORK_DIR"
         
         # Download latest agent
-        if ! curl -L -o hashtopolis.zip "https://github.com/hashtopolis/agent-python/releases/latest/download/hashtopolis.zip"; then
+        if ! curl -L -o hashtopolis.zip "${HT_SERVER%/api/server.php}/agents.php?download=1"; then
             echo "ERROR: Failed to download Hashtopolis agent"
             return 1
         fi
