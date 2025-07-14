@@ -1,6 +1,7 @@
 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda
 #  - see: "LATEST CUDA XXXX"
-FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
+# Use devel image for CUDA development tools needed to compile hashcat
+FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
 
 LABEL org.opencontainers.image.licenses=MIT
 LABEL org.opencontainers.image.description="Up-to-date CUDA container built to be a one-click runnable Hashtopolis agent to use on Vast.ai with interruptible instance support."
@@ -27,17 +28,24 @@ RUN apt update && apt-get upgrade -y && apt install -y --no-install-recommends \
   tmux \
   htop \
   wget \
-  p7zip-full && \
+  p7zip-full \
+  build-essential \
+  make \
+  cmake \
+  opencl-headers \
+  ocl-icd-libopencl1 \
+  ocl-icd-opencl-dev && \
   rm -rf /var/lib/apt/lists/*
 
-# Download and install the latest hashcat binary from GitHub
-RUN HASHCAT_VERSION=6.2.6 && \
-    cd /tmp && \
-    wget -O hashcat.7z https://github.com/hashcat/hashcat/releases/download/v${HASHCAT_VERSION}/hashcat-${HASHCAT_VERSION}.7z && \
-    7z x hashcat.7z && \
-    rm hashcat.7z && \
-    mv hashcat-${HASHCAT_VERSION} /opt/hashcat && \
-    ln -s /opt/hashcat/hashcat.bin /usr/local/bin/hashcat
+# Build hashcat from source with CUDA support
+RUN git clone https://github.com/hashcat/hashcat.git /tmp/hashcat && \
+    cd /tmp/hashcat && \
+    git checkout v6.2.6 && \
+    make clean && \
+    make ENABLE_CUDA=1 && \
+    make install && \
+    cd / && \
+    rm -rf /tmp/hashcat
 
 ENV VAST_AI_OPTIMIZED=true
 ENV SUPPORTS_INTERRUPTION=true
