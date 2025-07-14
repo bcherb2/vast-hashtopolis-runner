@@ -1,41 +1,48 @@
 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/cuda
 #  - see: "LATEST CUDA XXXX"
 # Use devel image for CUDA development tools needed to compile hashcat
-FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
+FROM nvidia/cuda:12.2.2-devel-ubuntu22.04
 
 LABEL org.opencontainers.image.licenses=MIT
 LABEL org.opencontainers.image.description="Up-to-date CUDA container built to be a one-click runnable Hashtopolis agent to use on Vast.ai with interruptible instance support."
 LABEL org.opencontainers.image.source=https://github.com/bcherb2/vast-hashtopolis-runner
 LABEL org.opencontainers.image.version="0.4.0"
 LABEL vast.ai.compatible="true"
-LABEL vast.ai.cuda.version="12.8.0"
+LABEL vast.ai.cuda.version="12.2.2"
 
 ENV DEBIAN_FRONTEND=NONINTERACTIVE
 
-RUN apt update && apt-get upgrade -y && apt install -y --no-install-recommends \
-  zip \
-  git \
-  python3 \
-  python3-psutil \
-  python3-pip \
-  python3-requests \
-  pciutils \
-  autossh \
-  jq \
-  curl \
-  rsync \
-  screen \
-  tmux \
-  htop \
-  wget \
-  p7zip-full \
-  build-essential \
-  make \
-  cmake \
-  opencl-headers \
-  ocl-icd-libopencl1 \
-  ocl-icd-opencl-dev && \
-  rm -rf /var/lib/apt/lists/*
+# Update package lists and install dependencies
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        wget \
+        git \
+        build-essential \
+        make \
+        cmake \
+        && \
+    apt-get install -y --no-install-recommends \
+        zip \
+        p7zip-full \
+        python3 \
+        python3-psutil \
+        python3-pip \
+        python3-requests \
+        pciutils \
+        autossh \
+        jq \
+        rsync \
+        screen \
+        tmux \
+        htop \
+        opencl-headers \
+        ocl-icd-libopencl1 \
+        ocl-icd-opencl-dev \
+        && \
+    rm -rf /var/lib/apt/lists/*
 
 # Build hashcat from source with CUDA support
 RUN git clone https://github.com/hashcat/hashcat.git /tmp/hashcat && \
