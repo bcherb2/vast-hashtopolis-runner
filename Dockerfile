@@ -26,8 +26,18 @@ RUN apt update && apt-get upgrade -y && apt install -y --no-install-recommends \
   screen \
   tmux \
   htop \
-  wget && \
+  wget \
+  p7zip-full && \
   rm -rf /var/lib/apt/lists/*
+
+# Download and install the latest hashcat binary from GitHub
+RUN HASHCAT_VERSION=6.2.6 && \
+    cd /tmp && \
+    wget -O hashcat.7z https://github.com/hashcat/hashcat/releases/download/v${HASHCAT_VERSION}/hashcat-${HASHCAT_VERSION}.7z && \
+    7z x hashcat.7z && \
+    rm hashcat.7z && \
+    mv hashcat-${HASHCAT_VERSION} /opt/hashcat && \
+    ln -s /opt/hashcat/hashcat.bin /usr/local/bin/hashcat
 
 ENV VAST_AI_OPTIMIZED=true
 ENV SUPPORTS_INTERRUPTION=true
