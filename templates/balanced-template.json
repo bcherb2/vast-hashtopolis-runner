@@ -1,0 +1,24 @@
+{
+  "name": "Hashtopolis Runner - Balanced",
+  "description": "Balanced performance and cost for most hash cracking scenarios",
+  "image": "ghcr.io/bcherb2/vast-hashtopolis-runner:latest",
+  "environment": {
+    "HT_SERVER": "https://your-server.com",
+    "HT_VOUCHER": "your_voucher_here",
+    "MAX_RETRIES": "8",
+    "RETRY_DELAY": "45",
+    "CONNECTION_TIMEOUT": "12"
+  },
+  "search_criteria": {
+    "reliability": ">0.98",
+    "dph_total": "<0.60",
+    "gpu_ram": ">=8000",
+    "cuda_version": ">=12.0"
+  },
+  "recommended_specs": {
+    "gpu_models": ["RTX 3070", "RTX 3080", "RTX 4070", "RTX 2080"],
+    "min_vram": "8GB",
+    "max_cost": "$0.60/hour"
+  },
+  "vast_url_template": "https://vast.ai/console/create?image=ghcr.io/bcherb2/vast-hashtopolis-runner:latest&env=HT_SERVER%3D{HT_SERVER}&env=HT_VOUCHER%3D{HT_VOUCHER}&search=reliability%3E0.98%20dph_total%3C0.60%20gpu_ram%3E%3D8000"
+}

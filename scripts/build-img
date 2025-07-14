@@ -2,41 +2,171 @@
 
 set -euo pipefail
 
-check-os(){
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[0;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Default platforms for multi-arch builds
+DEFAULT_PLATFORMS="linux/amd64,linux/arm64"
+
+log() {
+    echo -e "${BLUE}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $*"
+}
+
+log_success() {
+    echo -e "${GREEN}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $*"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $*"
+}
+
+log_error() {
+    echo -e "${RED}[$(date +'%Y-%m-%d %H:%M:%S')]${NC} $*"
+}
+
+check_docker_buildx() {
+    if ! docker buildx version >/dev/null 2>&1; then
+        log_error "Docker Buildx is required but not available"
+        exit 1
+    fi
+}
+
+check_os() {
+    local os
     os=$(uname -m)
     if [[ "${os}" != "x86_64" ]]; then
         echo "buildx build --platform linux/amd64"
     else
-        echo "build"
+        if [[ "${MULTI_ARCH:-}" == "y" ]] || [[ "${PUBLISH:-}" == "y" ]]; then
+            check_docker_buildx
+            echo "buildx build --platform ${PLATFORMS:-$DEFAULT_PLATFORMS}"
+        else
+            echo "build"
+        fi
     fi
 }
 
-is_verbose(){
-    if [[ "${VERBOSE-}" == "y" ]]; then
+is_verbose() {
+    if [[ "${VERBOSE:-}" == "y" ]]; then
         echo "--progress plain"
     fi
 }
 
-build_img(){
-    local build_type
-    build_type="$(check-os)"
-
-    echo "=> Making: ${DOCKER_IMAGE}"
-    docker ${build_type} $(is_verbose) ${EXTRA_DOCKER_ARGS-} -t ${DOCKER_IMAGE} .
+get_additional_tags() {
+    local tags=""
+    
+    # Add latest tag if building main branch or official build
+    if [[ "${GITHUB_REF_NAME:-}" == "main" ]] || [[ "${OFFICIAL_BUILD:-}" == "y" ]]; then
+        local latest_tag="${DOCKER_REPO}/${IMG_NAME}:latest"
+        tags="$tags -t $latest_tag"
+        log "Adding latest tag: $latest_tag"
+    fi
+    
+    # Add version tag if version is available
+    if [[ -n "${IMG_VERSION:-}" ]] && [[ "${IMG_VERSION}" != *"+"* ]]; then
+        local version_tag="${DOCKER_REPO}/${IMG_NAME}:v${IMG_VERSION}"
+        tags="$tags -t $version_tag"
+        log "Adding version tag: $version_tag"
+    fi
+    
+    echo "$tags"
 }
 
-maybe_publish(){
-    if [[ "${PUBLISH-}" == "y" ]]; then
-        echo "=> Detected PUBLISH=y, pushing built image to ${DOCKER_REPO}"
-        docker push ${DOCKER_IMAGE}
+build_img() {
+    local build_type
+    local additional_tags
+    local push_flag=""
+    
+    build_type="$(check_os)"
+    additional_tags="$(get_additional_tags)"
+    
+    # Add push flag for buildx when publishing
+    if [[ "${PUBLISH:-}" == "y" ]] && [[ "$build_type" == *"buildx"* ]]; then
+        push_flag="--push"
+        log "Building and pushing multi-platform image"
     else
-        echo "=> Did not detect PUBLISH=y, not publishing..."
+        log "Building image for local use"
+    fi
+    
+    log "Build type: $build_type"
+    log "Primary image: ${DOCKER_IMAGE}"
+    
+    # Execute the build
+    local build_cmd="docker ${build_type} $(is_verbose) ${EXTRA_DOCKER_ARGS:-} -t ${DOCKER_IMAGE} ${additional_tags} ${push_flag} ."
+    log "Executing: $build_cmd"
+    
+    if eval "$build_cmd"; then
+        log_success "Image build completed successfully"
+    else
+        log_error "Image build failed"
+        exit 1
+    fi
+}
+
+maybe_publish() {
+    # Skip if already pushed via buildx
+    if [[ "${PUBLISH:-}" == "y" ]] && [[ "$(check_os)" != *"buildx"* ]]; then
+        log "Publishing image to ${DOCKER_REPO}"
+        
+        if docker push "${DOCKER_IMAGE}"; then
+            log_success "Image published successfully"
+        else
+            log_error "Failed to publish image"
+            exit 1
+        fi
+        
+        # Push additional tags
+        local additional_tags
+        additional_tags="$(get_additional_tags)"
+        
+        if [[ -n "$additional_tags" ]]; then
+            # Extract tag names from the additional_tags string
+            local tag_list
+            tag_list=$(echo "$additional_tags" | grep -o "${DOCKER_REPO}/${IMG_NAME}:[^ ]*" || true)
+            
+            for tag in $tag_list; do
+                log "Pushing additional tag: $tag"
+                if docker push "$tag"; then
+                    log_success "Tag $tag published successfully"
+                else
+                    log_error "Failed to publish tag $tag"
+                fi
+            done
+        fi
+    elif [[ "${PUBLISH:-}" != "y" ]]; then
+        log_warning "PUBLISH not set to 'y', skipping image publication"
+    fi
+}
+
+show_build_info() {
+    log "Build Information:"
+    log "  Docker Image: ${DOCKER_IMAGE}"
+    log "  Image Name: ${IMG_NAME}"
+    log "  Image Version: ${IMG_VERSION:-<not set>}"
+    log "  Docker Repo: ${DOCKER_REPO}"
+    log "  Publish: ${PUBLISH:-n}"
+    log "  Verbose: ${VERBOSE:-n}"
+    log "  Multi-arch: ${MULTI_ARCH:-n}"
+    log "  Platforms: ${PLATFORMS:-$DEFAULT_PLATFORMS}"
+    log "  Official Build: ${OFFICIAL_BUILD:-n}"
+    
+    if [[ -n "${EXTRA_DOCKER_ARGS:-}" ]]; then
+        log "  Extra Docker Args: ${EXTRA_DOCKER_ARGS}"
     fi
 }
 
 main() {
+    log "Starting Docker image build process"
+    show_build_info
+    
     build_img
     maybe_publish
+    
+    log_success "Build process completed successfully"
 }
 
 main

@@ -1,0 +1,27 @@
+{
+  "name": "Hashtopolis Runner - Spot/Interruptible",
+  "description": "Ultra-low-cost interruptible instances with automatic restart capability",
+  "image": "ghcr.io/bcherb2/vast-hashtopolis-runner:latest",
+  "environment": {
+    "HT_SERVER": "https://your-server.com",
+    "HT_VOUCHER": "your_voucher_here",
+    "MAX_RETRIES": "20",
+    "RETRY_DELAY": "120",
+    "CONNECTION_TIMEOUT": "20",
+    "SUPPORTS_INTERRUPTION": "true",
+    "AUTO_RESTART": "true"
+  },
+  "search_criteria": {
+    "reliability": ">0.90",
+    "dph_total": "<0.25",
+    "gpu_ram": ">=4000",
+    "interruptible": "true"
+  },
+  "recommended_specs": {
+    "gpu_models": ["Any available GPU"],
+    "min_vram": "4GB",
+    "max_cost": "$0.25/hour",
+    "note": "Instances may be stopped at any time but will auto-restart"
+  },
+  "vast_url_template": "https://vast.ai/console/create?image=ghcr.io/bcherb2/vast-hashtopolis-runner:latest&env=HT_SERVER%3D{HT_SERVER}&env=HT_VOUCHER%3D{HT_VOUCHER}&env=MAX_RETRIES%3D20&env=RETRY_DELAY%3D120&search=reliability%3E0.90%20dph_total%3C0.25%20gpu_ram%3E%3D4000%20interruptible%3Dtrue"
+}

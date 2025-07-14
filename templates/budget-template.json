@@ -1,0 +1,24 @@
+{
+  "name": "Hashtopolis Runner - Budget",
+  "description": "Budget-friendly Hashtopolis agent for basic hash cracking tasks",
+  "image": "ghcr.io/bcherb2/vast-hashtopolis-runner:latest",
+  "environment": {
+    "HT_SERVER": "https://your-server.com",
+    "HT_VOUCHER": "your_voucher_here",
+    "MAX_RETRIES": "10",
+    "RETRY_DELAY": "60",
+    "CONNECTION_TIMEOUT": "15"
+  },
+  "search_criteria": {
+    "reliability": ">0.95",
+    "dph_total": "<0.30",
+    "gpu_ram": ">=4000",
+    "cuda_version": ">=12.0"
+  },
+  "recommended_specs": {
+    "gpu_models": ["GTX 1660", "RTX 3060", "GTX 1070"],
+    "min_vram": "4GB",
+    "max_cost": "$0.30/hour"
+  },
+  "vast_url_template": "https://vast.ai/console/create?image=ghcr.io/bcherb2/vast-hashtopolis-runner:latest&env=HT_SERVER%3D{HT_SERVER}&env=HT_VOUCHER%3D{HT_VOUCHER}&search=reliability%3E0.95%20dph_total%3C0.30%20gpu_ram%3E%3D4000"
+}
