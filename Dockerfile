@@ -52,7 +52,8 @@ RUN git clone https://github.com/hashcat/hashcat.git /tmp/hashcat && \
     make ENABLE_CUDA=1 && \
     make install && \
     cd / && \
-    rm -rf /tmp/hashcat
+    rm -rf /tmp/hashcat && \
+    mv /usr/local/bin/hashcat /usr/local/bin/hashcat-cuda
 
 ENV VAST_AI_OPTIMIZED=true
 ENV SUPPORTS_INTERRUPTION=true

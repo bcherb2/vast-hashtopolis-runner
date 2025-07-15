@@ -154,25 +154,6 @@ graceful_shutdown() {
 # Set up signal handlers for graceful shutdown
 trap graceful_shutdown SIGTERM SIGINT
 
-# Function to setup built-in hashcat for Hashtopolis
-setup_builtin_hashcat() {
-    echo "$(date): Setting up built-in hashcat for Hashtopolis..."
-    
-    # Create crackers directory structure that Hashtopolis expects
-    mkdir -p "$WORK_DIR/crackers/1"
-    cd "$WORK_DIR/crackers/1"
-    
-    # Create symlink to our compiled hashcat
-    if [[ ! -f "hashcat.bin" ]]; then
-        ln -sf /usr/local/bin/hashcat hashcat.bin
-        echo "$(date): Created symlink to built-in hashcat"
-    fi
-    
-    # Create a fake 7z extraction directory to fool the agent
-    mkdir -p temp
-    echo "$(date): Built-in hashcat setup complete"
-}
-
 # Function to check if hashtopolis.zip exists and download if needed
 ensure_hashtopolis_agent() {
     if [[ ! -f "$WORK_DIR/hashtopolis.zip" ]]; then
@@ -188,9 +169,6 @@ ensure_hashtopolis_agent() {
         
         echo "$(date): Hashtopolis agent downloaded successfully"
     fi
-    
-    # Setup built-in hashcat after downloading agent
-    setup_builtin_hashcat
 }
 
 # Function to run hashtopolis with retry logic
